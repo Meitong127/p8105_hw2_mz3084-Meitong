@@ -1,0 +1,222 @@
+---
+title: "p8105_hw2_mz3084 Meitong Zhou"
+author: "Meitong Zhou"
+date: "2024-09-26"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+library(tidyverse)
+```
+
+## Problem 1
+
+Import the data frame
+```{r}
+nyc_transit_df= read_csv("Meitong's data/NYC_Transit.csv", na = c("NA", "", "."))
+nyc_transit_df = janitor::clean_names(nyc_transit_df)
+```
+Select the variables
+
+```{r}
+select(nyc_transit_df, line:station_latitude,route1:route11,vending,entrance_type,entry,ada)
+relocate(nyc_transit_df,line, entry)|>
+  mutate(nyc_transit_df, entry = case_when(
+    entry == "YES" ~ TRUE,
+    entry == "NO" ~ FALSE
+))
+nyc_transit_df
+```
+
+The cleaned dataset has 1,868 rows and 12 columns. the variables include line, station, name, station latitude / longitude, routes served, entry, vending, entrance type, and ADA compliance. These data are tidy, meaning each variable is in its column, and each row represents a distinct subway entrance.
+
+**How many distinct stations are there?**
+
+```{r}
+distinct_stations_df = distinct(nyc_transit_df,line, station_name)
+distinct_stations_df
+```
+
+```{r}
+distinct_stations_count = nrow(distinct_stations_df)
+
+# Display the count of distinct stations
+distinct_stations_count
+```
+
+**How many stations are ADA compliant?**
+
+```{r}
+ada_comp_sta = nyc_transit_df|>
+  filter(ada == TRUE) |>
+  distinct(line, station_name) |>
+  count()
+ada_comp_sta
+```
+**What proportion of station entrances / exits without vending allow entrance?**
+```{r}
+no_vending_proportion = nyc_transit_df |>
+  filter(vending == FALSE) |>
+  summarise(proportion = n() / nrow(nyc_transit_df))
+no_vending_proportion
+```
+
+## Problem 2
+```{r}
+library(readxl)
+library(dplyr)
+library(janitor)
+```
+
+```{r}
+mr_trash_wheel= read_xlsx("Meitong's data/trash_wheel.xlsx", sheet="Mr. Trash Wheel", skip=1,na = c(".", "NA", ""), col_names = TRUE)
+mr_trash_wheel= 
+    janitor::clean_names(mr_trash_wheel) # clean the data into reasonable var name.
+drop_na(mr_trash_wheel) # drop rows that do not include dumpster-specific data
+mr_trash_wheel= mr_trash_wheel|>
+  mutate(sport_balls= as.integer(round(sports_balls, 0)))
+mr_trash_wheel= mr_trash_wheel|>
+  mutate(trash_wheel = "Mr. Trash Wheel")
+```
+```{r}
+# upload other two sheets and clean them
+prof_trash_wheel = read_xlsx("Meitong's data/trash_wheel.xlsx", sheet = "Professor Trash Wheel", skip = 1)
+prof_trash_wheel= 
+    janitor::clean_names(prof_trash_wheel)
+drop_na(prof_trash_wheel)
+prof_trash_wheel= prof_trash_wheel|>
+  mutate(trash_wheel = "Professor Trash Wheel")
+gwynnda_trash_wheel = read_xlsx("Meitong's data/trash_wheel.xlsx", sheet = "Gwynnda Trash Wheel", skip = 1)
+gwynnda_trash_wheel= 
+    janitor::clean_names(gwynnda_trash_wheel)
+drop_na(gwynnda_trash_wheel)
+gwynnda_trash_wheel= gwynnda_trash_wheel|>
+  mutate(trash_wheel = "Gwynnda Trash Wheel")
+```
+```{r}
+#change all variable "Year" into numeric factor
+mr_trash_wheel = mr_trash_wheel |>
+  mutate(year = as.numeric(year))
+prof_trash_wheel = prof_trash_wheel |>
+  mutate(year = as.numeric(year))
+gwynnda_trash_wheel = gwynnda_trash_wheel |>
+  mutate(year = as.numeric(year))
+# combine 3 data set
+all_trash_wheel= bind_rows(mr_trash_wheel, prof_trash_wheel, gwynnda_trash_wheel)
+all_trash_wheel
+```
+```{r}
+nrow(all_trash_wheel) 
+```
+
+```{r}
+total_sum_prof = prof_trash_wheel |>
+  summarise(weight_total = sum(weight_tons, na.rm = TRUE))
+total_sum_prof
+total_sum_gwynnda_cig_butts = gwynnda_trash_wheel |>
+  summarise(cig_butts_total = sum(cigarette_butts, na.rm = TRUE))
+total_sum_gwynnda_cig_butts
+```
+
+
+After cleaning and merging the data, the resulting dataset contains `rnrow(all_trash_wheel)`  observations. Professor Trash Wheel collected a total of `rtotal_sum_prof` tons of trash. In June 2022, Gwynnda Trash Wheel collected `rtotal_sum_gwynnda_cig_butts` cigarette butts.
+
+## Problem 3
+
+```{r}
+library(readr)
+library(dplyr)
+```
+
+```{r}
+# read all of the table ans clean there variables' name
+bakes_df = read_csv("gbb_datasets/bakes.csv")
+bakes_df= 
+    janitor::clean_names(bakes_df)
+bakers_df = read_csv("gbb_datasets/bakers.csv")
+bakers_df= 
+    janitor::clean_names(bakers_df)
+bakers_df = bakers_df|>
+  rename(baker = baker_name)
+results_df = read_csv("gbb_datasets/results.csv", skip = 2)
+results_df= 
+    janitor::clean_names(results_df)
+results_df = select(results_df,series, episode, baker, technical, result)
+viewers_df = read_csv("gbb_datasets/viewers.csv")
+viewers_df= 
+    janitor::clean_names(viewers_df)
+```
+
+```{r}
+#check if there is any non-matched variable
+anti_join(bakes_df, bakers_df, by = c("series", "baker"))
+anti_join(bakes_df, results_df, by = c("series", "episode", "baker"))
+```
+```{r}
+# combine two tables
+merged_data = left_join(bakes_df, bakers_df, by = c("series", "baker"))
+final_data = left_join(merged_data, results_df, by = c("series", "episode", "baker"))
+# download the new table
+write_csv(final_data, "gbb_datasets/final_gbbo_dataset.csv")
+```
+
+```{r}
+# build a new column
+final_data = final_data |>
+  mutate(star_baker_winner = ifelse(result == "STAR BAKER" | result == "WINNER", TRUE, FALSE))
+# get the star baker and winner from series 5 to series 10
+season_5_to_10 = final_data |>
+  filter(series >= 5 & series <= 10 & star_baker_winner == TRUE)
+star_baker_winner = season_5_to_10 |>
+  select(series, episode, baker, result)
+# download the table
+print(star_baker_winner)
+write_csv(star_baker_winner, "gbb_datasets/star_baker_winner_dataset.csv")
+```
+
+
+```{r}
+head(viewers_df, 10)
+```
+```{r}
+mean_series_1 <- viewers_df |> 
+  pull(series_1) |> 
+  mean(na.rm = TRUE)
+mean_series_5 <- viewers_df |> 
+  pull(series_5) |> 
+  mean(na.rm = TRUE)
+mean_series_1
+mean_series_5
+```
+
+I read the Excel data sheet for each garbage round using `read_xlsx()` and skipped unnecessary rows using the skip parameter. In addition, I used the `janitor::clean_names()` function to convert all column names to a more readable form (e.g., "Weight (tons)" to `weight_tons`. After checking for mismatched variables using `anti_join`, I joined the three tables together using `left_join`. Problems encountered: In the dataset, some observations may be missing. We used `na.rm = TRUE` to ignore these missing values when calculating the totals. For the viewers data frame, the mean value of series 1 is `rmean_series_1`, and the mean value of series 5 is `rmean_series_5`
+
+
+
+
+
+
